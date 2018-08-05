@@ -37,8 +37,10 @@ router.post('/users', (req, res, next) => {
     if (err) {
       return next(err);
     } else {
-      res.send(
-        `<h1>New user created</h1>`);
+      res
+        .status(201)
+        .location("/")
+        .send();
     }
   })
 }); 
