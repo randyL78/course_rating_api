@@ -7,7 +7,9 @@ const mongoose = require('mongoose');
 
 // custom modules
 const User = require('../models/user');
+const api = require('./routes/api');
 
+// Other globals
 const app = express();
 
 // Connect to MongoDB
@@ -27,7 +29,7 @@ app.use(morgan('dev'));
 
 // TODO add additional routes here
 /* Api routes */
-
+app.use('/api', api);
 
 // send a friendly greeting for the root route
 app.get('/', (req, res) => {
