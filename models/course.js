@@ -1,8 +1,14 @@
 const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-const CourseSchema = new mongoose.Schema({
+
+const CourseSchema = new Schema({
+  _id : {
+    type    : Schema.ObjectId,
+    auto    : true
+  }, 
   user: {
-    type    : ObjectId
+    type    : Schema.ObjectId
   },
   title: {
     type    : String,
@@ -25,7 +31,7 @@ const CourseSchema = new mongoose.Schema({
         required: true        
       }
     }],
-  reviews: [ObjectId]
+  reviews: [Schema.ObjectId]
 })
 
 const Course = mongoose.model('Course', CourseSchema);

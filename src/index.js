@@ -6,11 +6,13 @@ const morgan = require('morgan');
 const mongoose = require('mongoose');
 
 // custom modules
-const User = require('../models/user');
 const api = require('./routes/api');
 
 // Other globals
 const app = express();
+
+// Parse incoming request body
+app.use(express.json());
 
 // Connect to MongoDB
 mongoose.connect("mongodb://localhost:27017/course-api", { useNewUrlParser: true });
