@@ -2,19 +2,37 @@
 
 // load vendor modules
 const express = require('express');
-const router = express.Router();
+const auth = require('basic-auth');
 
 // load custom modules
 const User = require('../../models/user');
 
+
+// other global variables
+const router = express.Router();
 
 /* ++++++++++++++++++ 
      User routes      
    ++++++++++++++++++ */
 
 // GET the current user
-router.get('/users', (req, res) => {
-  res.send("<h1>Get current user</h1>");
+router.get('/users', (req, res, next) => {
+  const credentials = auth(req)
+  if (credentials) {
+    // res.send(credentials);
+    User.authenticate(credentials.name, credentials.pass, (error, user) => {
+      if (error || !user) {
+        const err = new Error("Wrong email or password");
+        err.status = 401;
+        next(err);
+      }
+      res.send(user);
+    });
+  } else {
+    const err = new Error("No credentials sent.");
+    err.status = 400;
+    return next(err);    
+  }
 }) 
 
 // POST a new user to database
@@ -52,7 +70,7 @@ router.post('/users', (req, res, next) => {
 
 // GET all courses
 router.get('/course', (req, res) => {
-  res.send("<h1>Get current user</h1>");
+  res.send("<h1>Get all courses</h1>");
 }) 
 
 // GET a specific course

@@ -42,6 +42,31 @@ UserSchema.pre('save', function (next) {
   })
 });
 
+
+UserSchema.statics.authenticate = (emailAddress, password, callback) => {
+  User
+    .findOne({emailAddress})
+    .exec( (err, user) => {
+
+      if (err) {
+        return callback(err);
+      } else if ( !user ) {
+
+        const err = new Error("User not found");
+        err.status = 401;
+        return callback(err);
+      }
+      bcrypt.compare(password, user.password, (error, result) => {
+        console.log(result);
+        if (result === true) {
+          return callback(null, user);
+        } else {
+          return callback();
+        }
+      })
+    })
+}
+
 const User = mongoose.model('User', UserSchema);
 
 module.exports = User;
