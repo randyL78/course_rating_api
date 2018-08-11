@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-
+// TODO: Add validation to schema for items that must be unique
 const CourseSchema = new Schema({
   _id : {
     type    : Schema.ObjectId,
@@ -33,6 +33,39 @@ const CourseSchema = new Schema({
     }],
   reviews: [Schema.ObjectId]
 })
+
+CourseSchema.statics.findAllTitles = callback => {
+  Course
+    .find()
+    .select('_id title')
+    .exec( (error, courses) => {
+      if (error) {
+        return callback(error);
+      } else if (!courses) {
+        const err = new Error("No courses found");
+        err.status = 401;
+        return callback(err);
+      }
+      return callback(null, courses);
+      
+    })
+}
+
+CourseSchema.statics.findSpecificCourse = (courseId, callback) => {
+  Course
+    .findById(courseId)
+    .exec ( (error, course) => {
+      if (error) {
+        return callback(error);
+      } else if (!course) {
+        const err = new Error("Course not found");
+        err.status = 401;
+        return callback(err);
+      }
+      return callback(null, course);
+    })
+}
+
 
 const Course = mongoose.model('Course', CourseSchema);
 
