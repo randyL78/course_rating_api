@@ -8,10 +8,14 @@ const auth = require('basic-auth');
 const User = require('../../models/user');
 const Course = require('../../models/course');
 const Review = require('../../models/review');
-
+const authenticate = require('../middleware/authenticate');
 
 // other global variables
 const router = express.Router();
+
+
+// Check if user is logged in
+router.use(authenticate);
 
 /* ++++++++++++++++++ 
      User routes      
@@ -19,20 +23,14 @@ const router = express.Router();
 
 // GET the current user
 router.get('/users', (req, res, next) => {
-  const credentials = auth(req)
-  if (credentials) {
-    User.authenticate(credentials.name, credentials.pass, (error, user) => {
-      if(error) {
-        next(error);
-      }
-      res.send(user);
-    });
+  if (req.authenticated) {
+    res.send(req.user)
   } else {
-    const err = new Error("No credentials sent.");
-    err.status = 400;
-    return next(err);    
+    const err = new Error("No credentials sent, user not logged in");
+    err.status = 401;
+    next(err);
   }
-}) 
+})
 
 // POST a new user to database
 router.post('/users', (req, res, next) => {
@@ -101,27 +99,22 @@ router.get('/courses/:courseId', (req, res, next) => {
 
 // POST a new course to database
 router.post('/courses', (req, res, next) => {
-  const credentials = auth(req)
-  if (credentials) {
-    User.authenticate(credentials.name, credentials.pass, (error) => {
+  if (req.authenticated) {
+    // use mongoose schema create method to insert user into database
+    // TODO: add model validation to course
+    Course.create(req.body, (error) => {
       if (error) {
-        next(error);
+        return next(error);
+      } else {
+        res
+          .status(201)
+          .location("/")
+          .send();
       }
-      // use mongoose schema create method to insert user into database
-      Course.create(req.body, (err, course) => {
-        if (err) {
-          return next(err);
-        } else {
-          res
-            .status(201)
-            .location("/")
-            .send();
-        }
-      })
     });
   } else {
-    const err = new Error("No credentials sent.");
-    err.status = 400;
+    const err = new Error("No credentials sent, user not logged in");
+    err.status = 401;
     return next(err);    
   }
 });
@@ -129,15 +122,13 @@ router.post('/courses', (req, res, next) => {
 
 // PUT changes to a course in database
 router.put('/courses/:courseId', (req, res, next) => {
-  const credentials = auth(req)
-  if (credentials) {
-    User.authenticate(credentials.name, credentials.pass, (error, user) => {
-      res
+  if (req.authenticated) {
+    // TODO: update the course in db
+    res
       .status(204)
       .send();
-    });
   } else {
-    const err = new Error("No credentials sent.");
+    const err = new Error("No credentials sent, user not logged in");
     err.status = 400;
     return next(err);    
   }
@@ -145,42 +136,38 @@ router.put('/courses/:courseId', (req, res, next) => {
 
 // POST a new review to a course
 router.post('/courses/:courseId/reviews', (req, res, next) => {
-  const credentials = auth(req)
-  if (credentials) {
-    User.authenticate(credentials.name, credentials.pass, (error, user) => {
 
-      // Get the document for the current course
-      Course
-        .findById(req.params.courseId, (error, course) => {
-          if (error) {
-            next(error);
-          } else if (course.user === user._id) {
-            const err = new Error("User can't review own course");
-            err.status(400)
-            next(error);
-          }
+  if (req.authenticated) {
+    // Get the document for the current course
+    Course
+      .findById(req.params.courseId, (error, course) => {
+        if (error) {
+          next(error);
+        } else if (course.user === req.user._id) {
+          const err = new Error("User can't review own course");
+          err.status(400)
+          next(error);
+        }
 
-          // Build the new review object
-          const review = req.body;
-          review.user = user._id;
-          
-          // Create new entry in review model
-          Review
-            .create(review)
-            .then( review => {
-              // Update the course to show review id
-              console.log(review._id)
-              course
-                .update({$push: {reviews: review._id }})
-              res
-                .status(201)
-                .location("/")
-                .send();
-            }) 
-        }) 
-    });
+        // Build the new review object
+        const review = req.body;
+        review.user = req.user._id;
+        
+        // Create new entry in review model
+        Review
+          .create(review)
+          .then( review => {
+            // Update the course to show review id
+            course
+              .update({$push: {reviews: review._id }})
+            res
+              .status(201)
+              .location("/")
+              .send();
+          }) 
+      }) 
   } else {
-    const err = new Error("No credentials sent.");
+    const err = new Error("No credentials sent, user not logged in");
     err.status = 400;
     return next(err);    
   }
