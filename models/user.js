@@ -17,7 +17,6 @@ const UserSchema = new Schema({
     type    : String,
     required: true
   },
-  // TODO: Add format validation
   emailAddress : {
     type    : String,
     required: true,

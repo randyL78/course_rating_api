@@ -59,8 +59,11 @@ CourseSchema.statics.findSpecificCourse = (courseId, callback) => {
   Course
     .findById(courseId)
     // Get related data from User and Review models
-    .populate('user')
-    .populate('reviews')
+    .populate('user', 'fullName')
+    .populate({
+      path: 'reviews', 
+      populate: {path: 'user', select: 'fullName'}
+    })
     .exec ( (error, course) => {
       if (error) {
         return callback(error);
