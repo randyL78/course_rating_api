@@ -2,7 +2,6 @@
 
 // load vendor modules
 const express = require('express');
-const auth = require('basic-auth');
 
 // load custom modules
 const User = require('../../models/user');
@@ -43,7 +42,9 @@ router.post('/users', (req, res, next) => {
   // use mongoose schema create method to insert user into database
   User.create(req.body, (error, user) => {
     if (error) {
-      return next(error);
+      const err = new Error(error.message)
+      err.status = 400;
+      next(err);
     } else {
       res
         .status(201)
@@ -60,7 +61,9 @@ router.put('/users', (req, res, next) => {
     .find({password: 'password'})
     .exec( (error, users) => {
       if(error) {
-        next(error);
+        const err = new Error(error.message)
+        err.status = 400;
+        next(err);
       }   
       users.forEach(user => {
         user.password = 'password';
@@ -79,7 +82,9 @@ router.put('/users', (req, res, next) => {
 router.get('/courses', (req, res, next) => {
   Course.findAllTitles((error, courses) => {
     if(error) {
-      next(error);
+      const err = new Error(error.message)
+      err.status = 400;
+      next(err);
     }
     res.send(courses);
   })
@@ -104,7 +109,9 @@ router.post('/courses', (req, res, next) => {
     // TODO: add model validation to course
     Course.create(req.body, (error) => {
       if (error) {
-        return next(error);
+        const err = new Error(error.message)
+        err.status = 400;
+        next(err);
       } else {
         res
           .status(201)
@@ -123,13 +130,20 @@ router.post('/courses', (req, res, next) => {
 // PUT changes to a course in database
 router.put('/courses/:courseId', (req, res, next) => {
   if (req.authenticated) {
-    // TODO: update the course in db
-    res
-      .status(204)
-      .send();
+    // Find the course by it's id and then update it
+    Course.findByIdAndUpdate(req.body._id, req.body, {new: true}, (error) => {
+      if (error) {
+        const err = new Error(error.message)
+        err.status = 400;
+        next(err);
+      }
+      res
+        .status(204)
+        .send();
+    })
   } else {
     const err = new Error("No credentials sent, user not logged in");
-    err.status = 400;
+    err.status = 401;
     return next(err);    
   }
 });
@@ -160,10 +174,12 @@ router.post('/courses/:courseId/reviews', (req, res, next) => {
             // Update the course to show review id
             course
               .update({$push: {reviews: review._id }})
-            res
-              .status(201)
-              .location("/")
-              .send();
+              .then( () => {
+                res
+                  .status(201)
+                  .location("/")
+                  .send();
+                })
           }) 
       }) 
   } else {

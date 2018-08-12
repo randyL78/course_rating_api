@@ -8,7 +8,8 @@ const CourseSchema = new Schema({
     auto    : true
   }, 
   user: {
-    type    : Schema.ObjectId
+    type    : Schema.ObjectId,
+    ref     : 'User'
   },
   title: {
     type    : String,
@@ -31,7 +32,10 @@ const CourseSchema = new Schema({
         required: true        
       }
     }],
-  reviews: [Schema.ObjectId]
+  reviews: [{
+    type  : Schema.ObjectId,
+    ref   : 'Review'
+  }]
 })
 
 CourseSchema.statics.findAllTitles = callback => {
@@ -54,6 +58,9 @@ CourseSchema.statics.findAllTitles = callback => {
 CourseSchema.statics.findSpecificCourse = (courseId, callback) => {
   Course
     .findById(courseId)
+    // Get related data from User and Review models
+    .populate('user')
+    .populate('reviews')
     .exec ( (error, course) => {
       if (error) {
         return callback(error);
