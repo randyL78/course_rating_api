@@ -4,14 +4,13 @@ const Schema = mongoose.Schema;
 const ReviewSchema = new Schema({
   _id : {
     type    : Schema.ObjectId,
-    auto    : true
-  }, 
+    auto    : true,
+  },
   user: {
     type    : Schema.ObjectId
   },
   postedOn: {
     type    : Date,
-    required: true,
     default : Date.now
   },
   rating: {

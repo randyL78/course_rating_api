@@ -7,6 +7,7 @@ const auth = require('basic-auth');
 // load custom modules
 const User = require('../../models/user');
 const Course = require('../../models/course');
+const Review = require('../../models/review');
 
 
 // other global variables
@@ -20,7 +21,6 @@ const router = express.Router();
 router.get('/users', (req, res, next) => {
   const credentials = auth(req)
   if (credentials) {
-    // res.send(credentials);
     User.authenticate(credentials.name, credentials.pass, (error, user) => {
       if(error) {
         next(error);
@@ -103,7 +103,10 @@ router.get('/courses/:courseId', (req, res, next) => {
 router.post('/courses', (req, res, next) => {
   const credentials = auth(req)
   if (credentials) {
-    User.authenticate(credentials.name, credentials.pass, (error, user) => {
+    User.authenticate(credentials.name, credentials.pass, (error) => {
+      if (error) {
+        next(error);
+      }
       // use mongoose schema create method to insert user into database
       Course.create(req.body, (err, course) => {
         if (err) {
@@ -125,7 +128,62 @@ router.post('/courses', (req, res, next) => {
 
 
 // PUT changes to a course in database
+router.put('/courses/:courseId', (req, res, next) => {
+  const credentials = auth(req)
+  if (credentials) {
+    User.authenticate(credentials.name, credentials.pass, (error, user) => {
+      res
+      .status(204)
+      .send();
+    });
+  } else {
+    const err = new Error("No credentials sent.");
+    err.status = 400;
+    return next(err);    
+  }
+});
 
 // POST a new review to a course
+router.post('/courses/:courseId/reviews', (req, res, next) => {
+  const credentials = auth(req)
+  if (credentials) {
+    User.authenticate(credentials.name, credentials.pass, (error, user) => {
+
+      // Get the document for the current course
+      Course
+        .findById(req.params.courseId, (error, course) => {
+          if (error) {
+            next(error);
+          } else if (course.user === user._id) {
+            const err = new Error("User can't review own course");
+            err.status(400)
+            next(error);
+          }
+
+          // Build the new review object
+          const review = req.body;
+          review.user = user._id;
+          
+          // Create new entry in review model
+          Review
+            .create(review)
+            .then( review => {
+              // Update the course to show review id
+              console.log(review._id)
+              course
+                .update({$push: {reviews: review._id }})
+              res
+                .status(201)
+                .location("/")
+                .send();
+            }) 
+        }) 
+    });
+  } else {
+    const err = new Error("No credentials sent.");
+    err.status = 400;
+    return next(err);    
+  }
+});
 
 module.exports = router;
