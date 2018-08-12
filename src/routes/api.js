@@ -88,12 +88,10 @@ router.get('/courses', (req, res, next) => {
     }
     res.send(courses);
   })
-  
 }) 
 
 // GET a specific course
 router.get('/courses/:courseId', (req, res, next) => {
-  // TODO: Get related data from user and review documents
   Course.findSpecificCourse(req.params.courseId, (error, course) => {
     if(error) {
       next(error);
@@ -131,7 +129,7 @@ router.post('/courses', (req, res, next) => {
 router.put('/courses/:courseId', (req, res, next) => {
   if (req.authenticated) {
     // Find the course by it's id and then update it
-    Course.findByIdAndUpdate(req.body._id, req.body, {new: true}, (error) => {
+    Course.findByIdAndUpdate(req.body._id, req.body, {new: true}, error => {
       if (error) {
         const err = new Error(error.message)
         err.status = 400;
